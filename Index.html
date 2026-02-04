@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <title>Domanda</title>
+  <style>
+    body {
+      margin: 0;
+      height: 100vh;
+      background-color: purple;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: Arial, sans-serif;
+      overflow: hidden;
+    }
+
+    .container {
+      text-align: center;
+      z-index: 10;
+    }
+
+    h1 {
+      color: white;
+      margin-bottom: 40px;
+    }
+
+    .buttons {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+    }
+
+    button {
+      background-color: red;
+      color: white;
+      border: none;
+      padding: 15px 40px;
+      font-size: 18px;
+      cursor: pointer;
+      border-radius: 8px;
+    }
+
+    #noMessage {
+      display: none;
+      color: white;
+      font-size: 50px;
+      text-align: center;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container" id="content">
+    <h1>Claudia ti vuoi mettere con Cacco?</h1>
+
+    <div class="buttons">
+      <button onclick="showSi()">Sì</button>
+      <button onclick="showNo()">No</button>
+    </div>
+  </div>
+
+  <div id="noMessage">VAFFANCULO</div>
+  <canvas id="fireworksCanvas"></canvas>
+
+  <script>
+    const canvas = document.getElementById("fireworksCanvas");
+    const ctx = canvas.getContext("2d");
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    window.addEventListener('resize', () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    });
+
+    function showSi() {
+      document.getElementById("content").style.display = "none";
+      document.body.style.backgroundColor = "black";
+      launchFireworks();
+    }
+
+    function showNo() {
+      document.getElementById("content").style.display = "none";
+      document.body.style.backgroundColor = "black";
+      document.getElementById("noMessage").style.display = "block";
+    }
+
+    // ---- FUOCHI D'ARTIFICIO SPETTACOLARI ----
+    const fireworks = [];
+
+    function random(min, max) {
+      return Math.random() * (max - min) + min;
+    }
+
+    class Particle {
+      constructor(x, y, color, vx, vy, life, size) {
+        this.x = x;
+        this.y = y;
+        this.color = color;
+        this.vx = vx;
+        this.vy = vy;
+        this.life = life;
+        this.size = size;
+        this.alpha = 1;
+        this.trail = [];
+      }
+
+      update() {
+        this.trail.push({x: this.x, y: this.y});
+        if (this.trail.length > 5) this.trail.shift();
+
+        this.x += this.vx;
+        this.y += this.vy;
+        this.vy += 0.02; // gravità
+        this.life -= 1;
+        this.alpha = this.life / 60; // dissolvenza graduale
+      }
+
+      draw() {
+        // disegna la scia
+        for (let i = this.trail.length - 1; i >= 0; i--) {
+          const t = this.trail[i];
+          ctx.globalAlpha = (i + 1) / this.trail.length * this.alpha;
+          ctx.fillStyle = this.color;
+          ctx.beginPath();
+          ctx.arc(t.x, t.y, this.size, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // particella principale
+        ctx.globalAlpha = this.alpha;
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+    }
+
+    function createFirework() {
+      const x = random(100, canvas.width - 100);
+      const y = random(100, canvas.height / 2);
+      const colors = ["#ff3f3f", "#ffd700", "#ff69b4", "#00ffff", "#7fff00", "#ff8c00"];
+      for (let i = 0; i < 50; i++) {
+        const angle = Math.random() * 2 * Math.PI;
+        const speed = random(2, 7);
+        const vx = Math.cos(angle) * speed;
+        const vy = Math.sin(angle) * speed;
+        const color = colors[Math.floor(random(0, colors.length))];
+        const size = random(2, 4);
+        fireworks.push(new Particle(x, y, color, vx, vy, 60, size));
+      }
+    }
+
+    function launchFireworks() {
+      createFirework();
+      const interval = setInterval(() => {
+        createFirework();
+      }, 500);
+
+      function animate() {
+        // sfondo leggermente trasparente per effetto scia
+        ctx.fillStyle = "rgba(0,0,0,0.2)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        for (let i = fireworks.length - 1; i >= 0; i--) {
+          const p = fireworks[i];
+          p.update();
+          p.draw();
+          if (p.life <= 0) fireworks.splice(i, 1);
+        }
+
+        requestAnimationFrame(animate);
+      }
+
+      animate();
+      setTimeout(() => clearInterval(interval), 5000); // fuochi per 5 secondi
+    }
+  </script>
+
+</body>
+</html>
